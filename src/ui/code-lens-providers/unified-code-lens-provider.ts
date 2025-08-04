@@ -26,6 +26,7 @@ import { BazelAction, BazelTarget } from '../../models/bazel-target';
 import { BazelService } from '../../services/bazel-service';
 import { Console } from '../../services/console';
 import { ExtensionUtils } from '../../services/extension-utils';
+import { JavaAstAnalyzer } from '../../languages/plugins/java-ast-utils';
 import * as vscode from 'vscode';
 
 enum PatternType {
@@ -77,15 +78,92 @@ export class UnifiedCodeLensProvider implements vscode.CodeLensProvider {
     }
 
     public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.CodeLens[] {
-        // Match the correct regex based on the document's language
         const codeLenses: vscode.CodeLens[] = [];
 
-        this.regexPatterns
-            .filter(pattern => pattern.language === document.languageId)
-            .forEach(pattern => {
-                const lenses = this.processRegexPattern(document, pattern, token);
-                codeLenses.push(...lenses);
-            });
+        // Use AST-based detection for Java, regex for other languages
+        if (document.languageId === 'java') {
+            const astLenses = this.processJavaAst(document, token);
+            codeLenses.push(...astLenses);
+        } else {
+            // Use traditional regex approach for other languages
+            this.regexPatterns
+                .filter(pattern => pattern.language === document.languageId)
+                .forEach(pattern => {
+                    const lenses = this.processRegexPattern(document, pattern, token);
+                    codeLenses.push(...lenses);
+                });
+        }
+
+        return codeLenses;
+    }
+
+    /**
+     * Process Java files using AST-based parsing for robust test/main method detection.
+     */
+    private processJavaAst(document: vscode.TextDocument, _token: vscode.CancellationToken): vscode.CodeLens[] {
+        const codeLenses: vscode.CodeLens[] = [];
+        const sourceCode = document.getText();
+        
+        const extensionName = ExtensionUtils.getExtensionName(this.context);
+        const extensionDisplayName = ExtensionUtils.getExtensionDisplayName(this.context);
+
+        try {
+            // Find test methods using AST parsing
+            const testMethods = JavaAstAnalyzer.findTestMethods(sourceCode);
+            for (const testMethod of testMethods) {
+                const position = new vscode.Position(Math.max(0, testMethod.line - 1), testMethod.column);
+                const line = document.lineAt(position.line);
+                const targets = BazelService.extractBazelTargetsAssociatedWithSourceFile(document.fileName);
+
+                if (targets.length === 0) {
+                    continue;
+                }
+
+                Console.info(`Installing AST-based code lens provider for test on ${testMethod.methodName}...`);
+
+                const realTargets = targets.map(target => {
+                    return new BazelTarget(this.context, this.bazelService, target.label, target.bazelPath, target.buildPath, 'test', target.ruleType);
+                });
+
+                const lens = new vscode.CodeLens(line.range, {
+                    title: `▶ Test ${testMethod.methodName}`,
+                    command: `${extensionName}.bazelTargetTask`,
+                    arguments: [realTargets, testMethod.methodName, extensionDisplayName]
+                });
+
+                codeLenses.push(lens);
+            }
+
+            // Find main methods using AST parsing  
+            const mainMethods = JavaAstAnalyzer.findMainMethods(sourceCode);
+            for (const mainMethod of mainMethods) {
+                const position = new vscode.Position(Math.max(0, mainMethod.line - 1), mainMethod.column);
+                const line = document.lineAt(position.line);
+                const targets = BazelService.extractBazelTargetsAssociatedWithSourceFile(document.fileName);
+
+                if (targets.length === 0) {
+                    continue;
+                }
+
+                Console.info(`Installing AST-based code lens provider for run on ${mainMethod.methodName}...`);
+
+                const realTargets = targets.map(target => {
+                    return new BazelTarget(this.context, this.bazelService, target.label, target.bazelPath, target.buildPath, 'run', target.ruleType);
+                });
+
+                const lens = new vscode.CodeLens(line.range, {
+                    title: `▶ Run ${mainMethod.methodName}`,
+                    command: `${extensionName}.bazelTargetTask`,
+                    arguments: [realTargets, mainMethod.methodName, extensionDisplayName]
+                });
+
+                codeLenses.push(lens);
+            }
+
+        } catch (error) {
+            Console.error(`Failed to analyze Java file with AST: ${error}`);
+            // Fallback: no code lenses if AST parsing fails
+        }
 
         return codeLenses;
     }

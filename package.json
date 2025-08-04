@@ -2,7 +2,7 @@
     "name": "bluebazel",
     "displayName": "Blue Bazel",
     "description": "Bazel vscode UI integration to build, debug, and test targets",
-    "version": "1.0.6",
+    "version": "1.1.0",
     "engines": {
         "vscode": "^1.85.2"
     },
@@ -17,7 +17,8 @@
         "workspaceContains:WORKSPACE",
         "workspaceContains:WORKSPACE.bazel",
         "workspaceContains:MODULE",
-        "workspaceContains:MODULE.bazel"
+        "workspaceContains:MODULE.bazel",
+        "onLanguage:java"
     ],
     "main": "./out/main.js",
     "contributes": {
@@ -411,6 +412,11 @@
                     "default": false,
                     "description": "Fetch available targets using Bazel query.\nWARNING: this ties up Bazel and can be slow.\nIf it is set to false it will parse the BUILD files to find available targets."
                 },
+                "bluebazel.disableTargetIndexing": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Disable automatic target indexing on extension startup. When enabled, CodeLens will work on-demand without scanning all targets in the repository."
+                },
                 "bluebazel.engineLogging": {
                     "type": "boolean",
                     "default": false,
@@ -478,6 +484,7 @@
         "@types/vscode": "^1.85.2",
         "@typescript-eslint/eslint-plugin": "^5.59.7",
         "@typescript-eslint/parser": "^5.59.7",
+        "@vscode/vsce": "^3.6.0",
         "esbuild": "^0.17.19",
         "eslint": "^7.32.0",
         "glob": "^7.1.6",
@@ -497,6 +504,7 @@
         "fast-glob": "^3.2.4",
         "glob-parent": "^6.0.2",
         "istextorbinary": "^5.10.0",
+        "java-ast": "^0.4.1",
         "tmp": "^0.2.1",
         "uuid": "^10.0.0"
     },
