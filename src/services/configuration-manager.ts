@@ -246,4 +246,14 @@ export class ConfigurationManager {
             return res;
     }
 
+    public isTargetIndexingDisabled(): boolean
+    {
+        const config = this.getConfig();
+        const res = config.get<boolean>('disableTargetIndexing');
+        if (res === undefined)
+            return true;  // Default to true (indexing disabled)
+        else
+            return res;
+    }
+
 }

@@ -25,6 +25,7 @@ import { LanguagePlugin } from './language-plugin';
 import { CppLanguagePlugin } from './plugins/cpp-language-plugin';
 import { GoLanguagePlugin } from './plugins/go-language-plugin';
 import { PythonLanguagePlugin } from './plugins/python-language-plugin';
+import { JavaLanguagePlugin } from './plugins/java-language-plugin';
 import { BazelEnvironment } from '../models/bazel-environment';
 import { BazelService } from '../services/bazel-service';
 import * as vscode from 'vscode';
@@ -61,4 +62,5 @@ export function registerLanguages(context: vscode.ExtensionContext,
     LanguageRegistry.registerPlugin(new CppLanguagePlugin(context, bazelService, bazelEnvironment.getEnvVars()));
     LanguageRegistry.registerPlugin(new GoLanguagePlugin(context, bazelService, bazelEnvironment.getEnvVars()));
     LanguageRegistry.registerPlugin(new PythonLanguagePlugin(context, bazelService, bazelEnvironment.getEnvVars()));
+    LanguageRegistry.registerPlugin(new JavaLanguagePlugin(context, bazelService, bazelEnvironment.getEnvVars()));
 }

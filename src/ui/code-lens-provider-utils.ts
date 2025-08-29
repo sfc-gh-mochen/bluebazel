@@ -32,4 +32,5 @@ export function registerCodeLensProviders(context: vscode.ExtensionContext, baze
     vscode.languages.registerCodeLensProvider({ language: 'cpp', scheme: 'file' }, testProvider);
     vscode.languages.registerCodeLensProvider({ language: 'c', scheme: 'file' }, testProvider);
     vscode.languages.registerCodeLensProvider({ language: 'python', scheme: 'file' }, testProvider);
+    vscode.languages.registerCodeLensProvider({ language: 'java', scheme: 'file' }, testProvider);
 }

@@ -45,7 +45,8 @@ export class BazelController {
         private readonly bazelTargetManager: BazelTargetManager,
         private readonly bazelTreeProvider: BazelTargetTreeProvider
     ) {
-        if (this.configurationManager.shouldRefreshTargetsOnFileChange()) {
+        if (this.configurationManager.shouldRefreshTargetsOnFileChange() && 
+            !this.configurationManager.isTargetIndexingDisabled()) {
             fileWatcherService.watch('**/BUILD{,.bazel}',
                 (affectedFiles: string[]) => {
                     Console.log(`BUILD files affected: ${affectedFiles.length}`);
@@ -54,11 +55,14 @@ export class BazelController {
             );
         }
 
-        if (this.configurationManager.shouldRefreshTargetsOnWorkspaceOpen() ||
-         !this.bazelTargetManager.hasCache()) {
-            this.refreshAvailableTargets().catch(error => {
-                vscode.window.showErrorMessage(`Cannot update available targets: ${error}`);
-            });
+        // Only refresh targets if indexing is not disabled
+        if (!this.configurationManager.isTargetIndexingDisabled()) {
+            if (this.configurationManager.shouldRefreshTargetsOnWorkspaceOpen() ||
+             !this.bazelTargetManager.hasCache()) {
+                this.refreshAvailableTargets().catch(error => {
+                    vscode.window.showErrorMessage(`Cannot update available targets: ${error}`);
+                });
+            }
         }
     }
 
